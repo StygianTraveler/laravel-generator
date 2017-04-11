@@ -37,6 +37,8 @@ class GeneratorConfig
     public $pathRoutes;
     public $pathViews;
     public $modelJsPath;
+	
+	public $pathLocalization;
 
     /* Model Names */
     public $mName;
@@ -59,6 +61,10 @@ class GeneratorConfig
 
     /* Prefixes */
     public $prefixes;
+	
+	public $customNamespaces;
+	public $customModelExtend;
+	public $locales;
 
     /* Command Options */
     public static $availableOptions = [
@@ -100,6 +106,10 @@ class GeneratorConfig
         $this->prepareTableName();
         $this->preparePrimaryName();
         $this->loadNamespaces($commandData);
+		
+		$this->customNamespaces = config('infyom.laravel_generator.custom_namespaces', []);
+		$this->locales = config('infyom.laravel_generator.locales', []);
+		
         $commandData = $this->loadDynamicVariables($commandData);
     }
 
@@ -123,6 +133,8 @@ class GeneratorConfig
             'infyom.laravel_generator.model_extend_class',
             'Illuminate\Database\Eloquent\Model'
         );
+		
+		$this->customModelExtend = config('infyom.laravel_generator.custom_extend_class', []);
 
         $this->nsApiController = config(
             'infyom.laravel_generator.namespace.api_controller',
@@ -196,15 +208,24 @@ class GeneratorConfig
                 'infyom.laravel_generator.path.modelsJs',
                 base_path('resources/assets/js/models/')
         );
+		
+		$this->pathLocalization = config('infyom.laravel_generator.path.localization', base_path('resources/lang/')).$prefix;
     }
 
     public function loadDynamicVariables(CommandData &$commandData)
     {
         $commandData->addDynamicVariable('$NAMESPACE_APP$', $this->nsApp);
         $commandData->addDynamicVariable('$NAMESPACE_REPOSITORY$', $this->nsRepository);
-        $commandData->addDynamicVariable('$NAMESPACE_MODEL$', $this->nsModel);
+        
+		if(isset($this->customNamespaces[$this->mName])) {
+			$commandData->addDynamicVariable('$NAMESPACE_MODEL$', $this->customNamespaces[$this->mName]);
+		}
+		else {
+			$commandData->addDynamicVariable('$NAMESPACE_MODEL$', $this->nsModel);
+		}
+		
         $commandData->addDynamicVariable('$NAMESPACE_DATATABLES$', $this->nsDataTables);
-        $commandData->addDynamicVariable('$NAMESPACE_MODEL_EXTEND$', $this->nsModelExtend);
+        $commandData->addDynamicVariable('$NAMESPACE_MODEL_EXTEND$', $this->customModelExtend[$this->mName] ?: $this->nsModelExtend);
 
         $commandData->addDynamicVariable('$NAMESPACE_API_CONTROLLER$', $this->nsApiController);
         $commandData->addDynamicVariable('$NAMESPACE_API_REQUEST$', $this->nsApiRequest);

@@ -11,6 +11,7 @@ use InfyOm\Generator\Commands\APIScaffoldGeneratorCommand;
 use InfyOm\Generator\Commands\Common\MigrationGeneratorCommand;
 use InfyOm\Generator\Commands\Common\ModelGeneratorCommand;
 use InfyOm\Generator\Commands\Common\RepositoryGeneratorCommand;
+use InfyOm\Generator\Commands\Common\LocalizationGeneratorCommand;
 use InfyOm\Generator\Commands\Publish\GeneratorPublishCommand;
 use InfyOm\Generator\Commands\Publish\LayoutPublishCommand;
 use InfyOm\Generator\Commands\Publish\PublishTemplateCommand;
@@ -80,6 +81,10 @@ class InfyOmGeneratorServiceProvider extends ServiceProvider
         $this->app->singleton('infyom.repository', function ($app) {
             return new RepositoryGeneratorCommand();
         });
+		
+		$this->app->singleton('infyom.localization', function ($app) {
+            return new LocalizationGeneratorCommand();
+        });
 
         $this->app->singleton('infyom.api.controller', function ($app) {
             return new APIControllerGeneratorCommand();
@@ -126,6 +131,7 @@ class InfyOmGeneratorServiceProvider extends ServiceProvider
             'infyom.migration',
             'infyom.model',
             'infyom.repository',
+			'infyom.localization',
             'infyom.api.controller',
             'infyom.api.requests',
             'infyom.api.tests',
