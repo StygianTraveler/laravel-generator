@@ -37,6 +37,8 @@ class GeneratorConfig
     public $pathRoutes;
     public $pathViews;
     public $modelJsPath;
+	
+	public $pathLocalization;
 
     /* Model Names */
     public $mName;
@@ -62,6 +64,7 @@ class GeneratorConfig
 	
 	public $customNamespaces;
 	public $customModelExtend;
+	public $locales;
 
     /* Command Options */
     public static $availableOptions = [
@@ -105,6 +108,7 @@ class GeneratorConfig
         $this->loadNamespaces($commandData);
 		
 		$this->customNamespaces = config('infyom.laravel_generator.custom_namespaces', []);
+		$this->customNamespaces = config('infyom.laravel_generator.locales', []);
 		
         $commandData = $this->loadDynamicVariables($commandData);
     }
@@ -204,6 +208,8 @@ class GeneratorConfig
                 'infyom.laravel_generator.path.modelsJs',
                 base_path('resources/assets/js/models/')
         );
+		
+		$this->pathLocalization = config('infyom.laravel_generator.path.localization', base_path('resources/lang/')).$prefix;
     }
 
     public function loadDynamicVariables(CommandData &$commandData)
