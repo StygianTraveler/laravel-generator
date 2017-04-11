@@ -108,7 +108,7 @@ class GeneratorConfig
         $this->loadNamespaces($commandData);
 		
 		$this->customNamespaces = config('infyom.laravel_generator.custom_namespaces', []);
-		$this->customNamespaces = config('infyom.laravel_generator.locales', []);
+		$this->locales = config('infyom.laravel_generator.locales', []);
 		
         $commandData = $this->loadDynamicVariables($commandData);
     }
