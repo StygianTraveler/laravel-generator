@@ -46,7 +46,7 @@ class ViewGenerator extends BaseGenerator
                 $this->generateIndex();
             }
 
-            if (count(array_intersect(['create', 'update'], $viewsToBeGenerated)) > 0) {
+            if (count(array_intersect(['create', 'edit'], $viewsToBeGenerated)) > 0) {
                 $this->generateFields();
             }
 
@@ -115,14 +115,17 @@ class ViewGenerator extends BaseGenerator
 
         $templateData = str_replace('$FIELD_HEADERS$', $this->generateTableHeaderFields(), $templateData);
 
-        $cellFieldTemplate = get_template('scaffold.views.table_cell', $this->templateType);
-
-        $tableBodyFields = [];
+		$tableBodyFields = [];
 
         foreach ($this->commandData->fields as $field) {
             if (!$field->inIndex) {
                 continue;
             }
+			
+			$cellFieldTemplate = @get_template('scaffold.views.table_cell' . $field->htmlType, $this->templateType);
+			if(empty($cellFieldTemplate)) {
+				$cellFieldTemplate = get_template('scaffold.views.table_cell', $this->templateType);
+			}
 
             $tableBodyFields[] = fill_template_with_field_data(
                 $this->commandData->dynamicVars,
@@ -299,17 +302,18 @@ class ViewGenerator extends BaseGenerator
 //                    break;
 //            }
 
-            $fieldTemplate = HTMLFieldGenerator::generateHTML($field, $this->templateType);
+			$fieldTemplate = HTMLFieldGenerator::generateHTML($field, $this->templateType);
 
-            if (!empty($fieldTemplate)) {
-                $fieldTemplate = fill_template_with_field_data(
-                    $this->commandData->dynamicVars,
-                    $this->commandData->fieldNamesMapping,
-                    $fieldTemplate,
-                    $field
-                );
-                $this->htmlFields[] = $fieldTemplate;
-            }
+			if (!empty($fieldTemplate)) {
+				$fieldTemplate = fill_template_with_field_data(
+					$this->commandData->dynamicVars,
+					$this->commandData->fieldNamesMapping,
+					$fieldTemplate,
+					$field
+				);
+				
+				$this->htmlFields[] = $fieldTemplate;
+			}
         }
 
         $templateData = get_template('scaffold.views.fields', $this->templateType);

@@ -225,7 +225,7 @@ class GeneratorConfig
 		}
 		
         $commandData->addDynamicVariable('$NAMESPACE_DATATABLES$', $this->nsDataTables);
-        $commandData->addDynamicVariable('$NAMESPACE_MODEL_EXTEND$', $this->customModelExtend[$this->mName] ?: $this->nsModelExtend);
+        $commandData->addDynamicVariable('$NAMESPACE_MODEL_EXTEND$', isset($this->customModelExtend[$this->mName]) ? $this->customModelExtend[$this->mName] : $this->nsModelExtend);
 
         $commandData->addDynamicVariable('$NAMESPACE_API_CONTROLLER$', $this->nsApiController);
         $commandData->addDynamicVariable('$NAMESPACE_API_REQUEST$', $this->nsApiRequest);

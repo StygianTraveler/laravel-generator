@@ -48,6 +48,8 @@ abstract class BaseRepository extends \Prettus\Repository\Eloquent\BaseRepositor
         foreach ($attributes as $key => $val) {
             if (isset($model) &&
                 method_exists($model, $key) &&
+                isset($model->fillableRelations) &&
+                in_array($key, $model->fillableRelations) && 
                 is_a(@$model->$key(), 'Illuminate\Database\Eloquent\Relations\Relation')
             ) {
                 $methodClass = get_class($model->$key($key));
@@ -66,33 +68,58 @@ abstract class BaseRepository extends \Prettus\Repository\Eloquent\BaseRepositor
                         $model->$model_key = $new_value;
                         break;
                     case 'Illuminate\Database\Eloquent\Relations\HasOne':
+                        $newValues = array_get($attributes, $key, []);
+                        if($model->$key == null) {
+                            $model->$key()->create($newValues);
+                        }
+                        else {
+                            $model->$key->fill($newValues);
+                            $model->$key->save();
+                        }
                         break;
                     case 'Illuminate\Database\Eloquent\Relations\HasOneOrMany':
                         break;
                     case 'Illuminate\Database\Eloquent\Relations\HasMany':
-                        $new_values = array_get($attributes, $key, []);
-                        if (array_search('', $new_values) !== false) {
-                            unset($new_values[array_search('', $new_values)]);
+
+
+                        $newValues = array_get($attributes, $key, []);
+
+                        //Find list of ids
+                        if(array_has($newValues, '0.id')) {
+                            //List of objects, extract the id of each
+                            $ids = array_pluck($newValues, 'id');
+                        }
+                        else {
+                            //Assuming newValues is just a list of ids
+                            $ids = $newValues;
                         }
 
-                        list($temp, $model_key) = explode('.', $model->$key($key)->getForeignKey());
-
-                        foreach ($model->$key as $rel) {
-                            if (!in_array($rel->id, $new_values)) {
-                                $rel->$model_key = null;
-                                $rel->save();
+                        //Update existing child elements
+                        foreach($model->$key as $element) {
+                            $inputKey = array_search($element->id, $ids);
+                            if($inputKey !== false) {
+                                //element is already in the database, update it if we have data
+                                if(is_array($newValues[$inputKey])) {
+                                    $element->fill($newValues[$inputKey]);
+                                    $element->save();
+                                    $this->updateRelations($element, $newValues[$inputKey]);
+                                    unset($newValues[$inputKey]);
+                                }
                             }
-                            unset($new_values[array_search($rel->id, $new_values)]);
-                        }
-
-                        if (count($new_values) > 0) {
-                            $related = get_class($model->$key()->getRelated());
-                            foreach ($new_values as $val) {
-                                $rel = $related::find($val);
-                                $rel->$model_key = $model->id;
-                                $rel->save();
+                            else {
+                                //element was removed in the form, delete it from the database
+                                $element->delete();
                             }
                         }
+
+                        //Remaining elements in the array are new, create them if we have data
+                        foreach($newValues as $elementData) {
+                            if(is_array($elementData)) {
+                                $element = $model->$key()->create($elementData);
+                                $this->updateRelations($element, $elementData);
+                            }
+                        }
+
                         break;
                 }
             }

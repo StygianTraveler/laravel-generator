@@ -11,6 +11,8 @@ use InfyOm\Generator\Generators\API\APITestGenerator;
 use InfyOm\Generator\Generators\MigrationGenerator;
 use InfyOm\Generator\Generators\ModelGenerator;
 use InfyOm\Generator\Generators\RepositoryGenerator;
+use InfyOm\Generator\Generators\LocalizationGenerator;
+use InfyOm\Generator\Generators\PermissionsGenerator;
 use InfyOm\Generator\Generators\RepositoryTestGenerator;
 use InfyOm\Generator\Generators\Scaffold\ControllerGenerator;
 use InfyOm\Generator\Generators\Scaffold\MenuGenerator;
@@ -80,51 +82,88 @@ class RollbackGeneratorCommand extends Command
         $this->commandData = new CommandData($this, $this->argument('type'));
         $this->commandData->config->mName = $this->commandData->modelName = $this->argument('model');
 
-        $this->commandData->config->init($this->commandData, ['tableName', 'prefix']);
+        $this->commandData->config->init($this->commandData, ['tableName', 'prefix', 'skip']);
 
-        $migrationGenerator = new MigrationGenerator($this->commandData);
-        $migrationGenerator->rollback();
+        if(!$this->isSkip('migration')) {
+            $migrationGenerator = new MigrationGenerator($this->commandData);
+            $migrationGenerator->rollback();
+        }
 
-        $modelGenerator = new ModelGenerator($this->commandData);
-        $modelGenerator->rollback();
+        if(!$this->isSkip('model')) {
+            $modelGenerator = new ModelGenerator($this->commandData);
+            $modelGenerator->rollback();
+        }
 
-        $repositoryGenerator = new RepositoryGenerator($this->commandData);
-        $repositoryGenerator->rollback();
+        if(!$this->isSkip('repository')) {
+            $repositoryGenerator = new RepositoryGenerator($this->commandData);
+            $repositoryGenerator->rollback();
+        }
 
-        $requestGenerator = new APIRequestGenerator($this->commandData);
-        $requestGenerator->rollback();
+        if(!$this->isSkip('localization')) {
+            $localizationGenerator = new localizationGenerator($this->commandData);
+            $localizationGenerator->rollback();
+        }
 
-        $controllerGenerator = new APIControllerGenerator($this->commandData);
-        $controllerGenerator->rollback();
+        if(!$this->isSkip('permissions')) {
+            $permissionsGenerator = new PermissionsGenerator($this->commandData);
+            $permissionsGenerator->rollback();        
+        }
 
-        $routesGenerator = new APIRoutesGenerator($this->commandData);
-        $routesGenerator->rollback();
+        if(!$this->isSkip('requests') && !$this->isSkip('api_requests')) {
+            $requestGenerator = new APIRequestGenerator($this->commandData);
+            $requestGenerator->rollback();
+        }
 
-        $requestGenerator = new RequestGenerator($this->commandData);
-        $requestGenerator->rollback();
+        if(!$this->isSkip('controllers') && !$this->isSkip('api_controllers')) {
+            $controllerGenerator = new APIControllerGenerator($this->commandData);
+            $controllerGenerator->rollback();
+        }
 
-        $controllerGenerator = new ControllerGenerator($this->commandData);
-        $controllerGenerator->rollback();
+        if(!$this->isSkip('routes') && !$this->isSkip('api_routes')) {
+            $routesGenerator = new APIRoutesGenerator($this->commandData);
+            $routesGenerator->rollback();
+        }
 
-        $viewGenerator = new ViewGenerator($this->commandData);
-        $viewGenerator->rollback();
+        if(!$this->isSkip('requests') && !$this->isSkip('scaffold_requests')) {
+            $requestGenerator = new RequestGenerator($this->commandData);
+            $requestGenerator->rollback();
+        }
 
-        $routeGenerator = new RoutesGenerator($this->commandData);
-        $routeGenerator->rollback();
+        if(!$this->isSkip('controllers') && !$this->isSkip('scaffold_controllers')) {
+            $controllerGenerator = new ControllerGenerator($this->commandData);
+            $controllerGenerator->rollback();
+        }
 
-        $controllerGenerator = new VueJsControllerGenerator($this->commandData);
-        $controllerGenerator->rollback();
+        if(!$this->isSkip('views')) {
+            $viewGenerator = new ViewGenerator($this->commandData);
+            $viewGenerator->rollback();
+        }
 
-        $routesGenerator = new VueJsRoutesGenerator($this->commandData);
-        $routesGenerator->rollback();
+        if(!$this->isSkip('routes') && !$this->isSkip('scaffold_routes')) {
+            $routeGenerator = new RoutesGenerator($this->commandData);
+            $routeGenerator->rollback();
+        }
 
-        $viewGenerator = new VueJsViewGenerator($this->commandData);
-        $viewGenerator->rollback();
+        if(!$this->isSkip('controllers')) {
+            $controllerGenerator = new VueJsControllerGenerator($this->commandData);
+            $controllerGenerator->rollback();
+        }
+
+        if(!$this->isSkip('routes')) {
+            $routesGenerator = new VueJsRoutesGenerator($this->commandData);
+            $routesGenerator->rollback();
+        }
+
+        if(!$this->isSkip('views')) {
+            $viewGenerator = new VueJsViewGenerator($this->commandData);
+            $viewGenerator->rollback();
+        }
 
         $modelJsConfigGenerator = new ModelJsConfigGenerator($this->commandData);
         $modelJsConfigGenerator->rollback();
 
-        if ($this->commandData->getAddOn('tests')) {
+        if (!$this->isSkip('tests') && $this->commandData->getAddOn('tests')) {
+
             $repositoryTestGenerator = new RepositoryTestGenerator($this->commandData);
             $repositoryTestGenerator->rollback();
 
@@ -136,12 +175,26 @@ class RollbackGeneratorCommand extends Command
         }
 
         if ($this->commandData->config->getAddOn('menu.enabled')) {
-            $menuGenerator = new MenuGenerator($this->commandData);
-            $menuGenerator->rollback();
+
+            if(!$this->isSkip('menu')) {
+                $menuGenerator = new MenuGenerator($this->commandData);
+                $menuGenerator->rollback();
+            }
         }
 
-        $this->info('Generating autoload files');
-        $this->composer->dumpOptimized();
+        if(!$this->isSkip('dump-autoload')) {
+            $this->info('Generating autoload files');
+            $this->composer->dumpOptimized();
+        }
+    }
+
+    public function isSkip($skip)
+    {
+        if ($this->commandData->getOption('skip')) {
+            return in_array($skip, (array) $this->commandData->getOption('skip'));
+        }
+
+        return false;
     }
 
     /**
@@ -154,6 +207,7 @@ class RollbackGeneratorCommand extends Command
         return [
             ['tableName', null, InputOption::VALUE_REQUIRED, 'Table Name'],
             ['prefix', null, InputOption::VALUE_REQUIRED, 'Prefix for all files'],
+            ['skip', null, InputOption::VALUE_REQUIRED, 'Skip Specific Items to Rollback'],
         ];
     }
 

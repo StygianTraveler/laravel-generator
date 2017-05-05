@@ -27,6 +27,7 @@ class GeneratorField
     public $isPrimary = false;
     public $inForm = true;
     public $inIndex = true;
+	public $isTranslatable = false;
 
     public function parseDBType($dbInput)
     {
@@ -78,6 +79,9 @@ class GeneratorField
         if (in_array('ii', $optionsArr)) {
             $this->inIndex = false;
         }
+		if (in_array('t', $optionsArr)) {
+            $this->isTranslatable = true;
+        }
     }
 
     private function prepareMigrationText()
@@ -125,6 +129,7 @@ class GeneratorField
         $field->isPrimary = isset($fieldInput['primary']) ? $fieldInput['primary'] : false;
         $field->inForm = isset($fieldInput['inForm']) ? $fieldInput['inForm'] : true;
         $field->inIndex = isset($fieldInput['inIndex']) ? $fieldInput['inIndex'] : true;
+		$field->isTranslatable = isset($fieldInput['translatable']) ? $fieldInput['translatable'] : false;
 
         return $field;
     }

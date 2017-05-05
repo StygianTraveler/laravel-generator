@@ -65,7 +65,7 @@ class GeneratorFieldsInputUtil
             $arrStr .= "'$item' => '$key', ";
         }
 
-        $arrStr = substr($arrStr, 0, strlen($arrStr) - 2);
+        //$arrStr = substr($arrStr, 0, strlen($arrStr) - 2);
 
         $arrStr .= ']';
 

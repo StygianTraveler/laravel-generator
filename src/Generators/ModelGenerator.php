@@ -58,11 +58,15 @@ class ModelGenerator extends BaseGenerator
         $templateData = $this->fillSoftDeletes($templateData);
 
         $fillables = [];
+		$translatables = [];
 
         foreach ($this->commandData->fields as $field) {
             if ($field->isFillable) {
                 $fillables[] = "'".$field->name."'";
             }
+			if($field->isTranslatable) {
+				$translatables[] = "'".$field->name."'";
+			}
         }
 
         $templateData = $this->fillDocs($templateData);
@@ -90,6 +94,8 @@ class ModelGenerator extends BaseGenerator
         );
 
         $templateData = str_replace('$GENERATE_DATE$', date('F j, Y, g:i a T'), $templateData);
+		
+		$templateData = $this->fillTranslatables($templateData, $translatables);
 
         return $templateData;
     }
@@ -115,6 +121,20 @@ class ModelGenerator extends BaseGenerator
 
         return $templateData;
     }
+	
+	private function fillTranslatables($templateData, $translatables)
+	{
+		if($translatables) {
+			$templateData = str_replace('$HAS_TRANSLATIONS$', 'use \Spatie\Translatable\HasTranslations;', $templateData);
+			$templateData = str_replace('$TRANSLATABLE$', 'public $translatable = [' . implode(',', $translatables) . '];', $templateData);
+		}
+		else {
+			$templateData = str_replace('$HAS_TRANSLATIONS$', '', $templateData);
+			$templateData = str_replace('$TRANSLATABLE$', '', $templateData);
+		}
+		
+		return $templateData;
+	}
 
     private function fillDocs($templateData)
     {
